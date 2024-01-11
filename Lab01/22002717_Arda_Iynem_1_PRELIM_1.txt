@@ -1,0 +1,226 @@
+# Author: Arda Iynem
+# Bilkent ID: 22002717
+# Section: 1
+# Lab No: 1 (Preliminary)
+# Program: Swap
+
+#------------------------------ Text Segment ------------------------------
+		.text
+	la	$a0, msgSize # Print prompt
+	li	$v0, 4
+	syscall
+	
+	li 	$v0, 5 # Get user input
+	syscall
+	
+	la 	$t1,($v0)
+	lw	$t2, sizeMax
+	bgt 	$t1, $t2, terminate # Terminate if array size input is more than limit
+	
+	la 	$t3, array1
+	li 	$t2, 0
+ask:
+	bge  	$t2, $t1, askDone # Loop until all inputs are gotten
+	la	$a0, msgAsk # Print prompt
+	li	$v0, 4
+	syscall
+	li 	$v0, 5 # Get user input
+	syscall
+	sw 	$v0, ($t3) # Store the input to the array
+	addi 	$t2, $t2, 1
+	addi 	$t3, $t3, 4
+	j ask
+askDone:
+	
+	la 	$t3, array1
+	li 	$t2, 0
+	jal display
+	
+	
+	la 	$t3, array1
+	sub	$t4, $t1, 1
+	mul  	$t5, $t4, 4
+	add	$t5, $t5, $t3
+	li 	$t2, 0
+	li 	$t4, 0
+	la	$a0, newLine
+	li	$v0, 4	
+	syscall
+	
+swap: 
+	lw 	$t4, ($t3)
+	lw	$t6, ($t5)
+	sw 	$t4, ($t5)
+	sw 	$t6, ($t3)
+	addi	$t3, $t3, 4
+	subi	$t5, $t5, 4
+	blt 	$t3, $t5, swap
+	
+	la 	$t3, array1
+	jal display
+
+	la	$a0, newLine
+	li	$v0, 4
+	syscall	
+	la	$a0, msgDone
+	li	$v0, 4
+	syscall	
+	
+	li	$v0, 10
+	syscall
+	
+
+#------------------------------ Subprogram Segment ------------------------------
+terminate:
+	la	$a0, msgExceed
+	li	$v0, 4
+	syscall	
+	
+	li	$v0, 10
+	syscall
+	
+display:
+	bge  $t2, $t1, displayDone
+	lw	$a0, ($t3)	
+	li	$v0, 1
+	syscall	
+	
+	addi $t2, $t2, 1
+	addi $t3, $t3, 4
+displayLoop:
+	la	$a0, comma
+	li	$v0, 4
+	syscall	
+	
+	lw	$a0, ($t3)	
+	li	$v0, 1
+	syscall	
+	
+	addi $t2, $t2, 1
+	addi $t3, $t3, 4
+	blt  $t2, $t1, displayLoop
+displayDone:
+	jr $ra
+	
+sizeExceed:
+	la $a0,msgExceed
+	li $v0,4
+	syscall
+	
+	li $v0,10
+	syscall
+
+#------------------------------ Data Segment ------------------------------
+	.data
+array1: .space 	80
+msgSize: .asciiz "Input array size: "
+msgAsk: .asciiz	"Input number: "
+msgExceed: .asciiz "Max array size is 20!\n"
+msgDone: .asciiz "Done !"
+size: .word 0
+sizeMax: .word 20
+comma: .asciiz ", "
+newLine: .asciiz "\n"
+
+
+
+
+
+
+
+
+
+
+# Author: Arda Iynem
+# Bilkent ID: 22002717
+# Section: 1
+# Lab No: 1 (Preliminary)
+# Program: Arithmetic Expression
+
+#------------------------------ Text Segment ------------------------------
+		.text
+	
+	la $t0, array1
+	li $t1, 0
+	lw $t2, arraySize # 3 variables are needed
+	li $t7, 66
+ask:
+	la $a0, prompt # Print prompt
+	li $v0, 4
+	syscall
+	la $a0, ($t7) # Print prompt
+	li $v0, 11
+	syscall
+	la $a0, colon # Print prompt
+	li $v0, 4
+	syscall
+	
+	li $v0, 5 # Get user input
+	syscall
+	
+	sw $v0, ($t0)
+	addi $t0, $t0, 4
+	addi $t1, $t1, 1
+	addi $t7, $t7, 1
+	blt $t1, $t2, ask # ask arraySize(3) times for B, C and D
+	
+	la $t0, array1
+	lw $t1, ($t0) # t1 = b
+	addi $t0, $t0, 4
+	lw $t2, ($t0) # t2 = c
+	addi $t0, $t0, 4
+	lw $t3, ($t0) # t3 = d
+	addi $t0, $t0, 4 # t0 is at the adress of a
+	
+	la $a0 ($t1)
+	la $a1 ($t2)
+	jal divFunc # divide t4 = v0, t6 = v1, t1 = a0, t2 = a1
+	la $t4 ($v0)
+	la $t6 ($v1)
+	
+	sw $t4, ($t0) #store result to array adress of a
+	
+	mul $t4, $t1, $t3 # t4 = b * d
+	lw $t5, ($t0) # t5 = a
+
+	add $t4, $t5, $t4 # a = a + b * d (a = b / c)
+	sub $t4, $t4, $t2 # a = a - c (a = b / d + b * d)
+
+	la $a0 ($t4)
+	la $a1 ($t1)
+	jal divFunc # remainder to calculate a mod b (a = b / d + b * d - c)
+	la $t4 ($v1)
+
+	sw $t4, ($t0) # store result to the array adress of a
+	
+	la $a0, result
+	li $v0, 4
+	syscall
+	
+	la $a0, ($t4)
+	li $v0, 1
+	syscall
+	
+	li $v0,10
+	syscall
+#------------------------------ Subprogram Segment ------------------------------
+divFunc:
+	li $v0, 0 # v0 is quotinent, v1 is the remainder
+	la $v1, ($a0)
+divLoop:
+	bge $v1, $a1, divSub
+	jr $ra
+divSub:
+	sub $v1, $v1, $a1
+	addi $v0, $v0, 1
+	j divLoop
+	
+	
+
+#------------------------------ Data Segment ------------------------------
+	.data
+array1: .space 	16
+arraySize: .word 3
+prompt: .asciiz "Input variable "
+colon: .asciiz " : "
+result: .asciiz "Result of (B / C + D * B - C ) Mod B is: "

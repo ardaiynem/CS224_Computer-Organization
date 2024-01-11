@@ -1,0 +1,447 @@
+CS224
+Lab No.: 1
+Section No.: 1
+Your Full Name: Arda İynem
+Bilkent ID: 22002717
+Date: 05/10/2022
+
+
+
+##
+## Program1.asm - prints out "hello world"
+##
+##	a0 - points to the string
+##
+
+#################################
+#					 	#
+#		text segment		#
+#						#
+#################################
+
+	.text		
+	.globl __start 
+
+__start:		# execution starts here
+	la $a0,str	# put string address into a0
+	li $v0,4	# system call to print
+	syscall		#   out a string
+
+	li $v0,10  # system call to exit
+	syscall	#    bye bye
+
+
+#################################
+#					 	#
+#     	 data segment		#
+#						#
+#################################
+
+	.data
+str:	.asciiz "Hello Mr. TA\n"
+n:	.word	10
+
+##
+## end of file Program1.asm
+
+
+
+
+
+
+
+
+
+##
+## Program2.asm asks user for temperature in Celsius,
+##  converts to Fahrenheit, prints the result.
+##
+##	v0 - reads in Celsius
+##	t0 - holds Fahrenheit result
+##	a0 - points to output strings
+##
+
+#################################
+#					 	#
+#		text segment		#
+#						#
+#################################
+
+	.text		
+	.globl __start	
+
+__start:
+	la $a0,prompt	# output prompt message on terminal
+	li $v0,4	# syscall 4 prints the string
+	syscall
+
+	li $v0, 5	# syscall 5 reads an integer
+	syscall
+
+	mul $t0,$v0,9	# to convert,multiply by 9,
+	div $t0,$t0,5	# divide by 5, then
+	add $t0,$t0,32	# add 32
+
+	la $a0,ans1	# print string before result
+	li $v0,4
+	syscall
+
+	move $a0,$t0	# print integer result
+	li $v0,1		# using syscall 1
+	syscall
+
+	la $a0,endl	# system call to print
+	li $v0,4		# out a newline
+	syscall
+
+	li $v0,10		# system call to exit
+	syscall		#    bye bye
+
+
+#################################
+#					 	#
+#     	 data segment		#
+#						#
+#################################
+
+	.data
+prompt:	.asciiz "Enter temperature (Celsius): "
+ans1:	.asciiz "The temperature in Fahrenheit is "
+endl:	.asciiz "\n"
+
+##
+## end of file Program2.asm
+
+
+
+
+
+
+
+
+##
+##	Program3.asm is a loop implementation
+##	of the Fibonacci function
+##        
+
+#################################
+#					 	#
+#		text segment		#
+#						#
+#################################
+
+	.text		
+.globl __start
+ 
+__start:		# execution starts here
+	li $a0,7	# to calculate fib(7)
+	jal fib		# call fib
+	move $a0,$v0	# print result
+	li $v0, 1
+	syscall
+
+	la $a0,endl	# print newline
+	li $v0,4
+	syscall
+
+	li $v0,10
+	syscall		# bye bye
+
+#------------------------------------------------
+
+
+fib:	move $v0,$a0	# initialise last element
+	blt $a0,2,done	# fib(0)=0, fib(1)=1
+
+	li $t0,0	# second last element
+	li $v0,1	# last element
+
+loop:	add $t1,$t0,$v0	# get next value
+	move $t0,$v0	# update second last
+	move $v0,$t1	# update last element
+	sub $a0,$a0,1	# decrement count
+	bgt $a0,1,loop	# exit loop when count=0
+done:	jr $ra
+
+#################################
+#					 	#
+#     	 data segment		#
+#						#
+#################################
+
+	.data
+endl:	.asciiz "\n"
+
+##
+## end of Program3.asm
+
+
+
+
+
+##
+##	Calc.asm
+##  
+
+#------------------------------ Text Segment ------------------------------
+	.text
+	
+	la $t0, array1
+	li $t1, 0
+	lw $t2, arraySize # 2 variables are needed
+	li $t7, 97
+	
+	ask:
+	la $a0, prompt # Print prompt
+	li $v0, 4
+	syscall
+	la $a0, ($t7) # Print prompt
+	li $v0, 11
+	syscall
+	la $a0, colon # Print prompt
+	li $v0, 4
+	syscall
+	
+	li $v0, 5 # Get user input
+	syscall
+	
+	sw $v0, ($t0)
+	addi $t0, $t0, 4
+	addi $t1, $t1, 1
+	addi $t7, $t7, 1
+	blt $t1, $t2, ask # ask arraySize(3) times for B, C and D
+	
+	la $t0, array1
+	lw $t1, ($t0) # t1 = a
+	addi $t0, $t0, 4
+	lw $t2, ($t0) # t2 = b
+	addi $t0, $t0, 4 # t0 is at the adress of x
+	
+	li $t3, 2
+	mult $t1, $t3
+	mflo $t3
+	sub $t3, $t3, $t2
+	add $t4, $t1, $t2
+	
+	div $t3, $t4
+	mflo $t3
+	sw $t3, ($t0)
+	
+	
+	la $a0, result
+	li $v0, 4
+	syscall
+	
+	la $a0, ($t3)
+	li $v0, 1
+	syscall
+
+#------------------------------ Data Segment ------------------------------
+	.data
+array1: .space 	12
+arraySize: .word 2
+prompt: .asciiz "Input variable "
+colon: .asciiz " : "
+result: .asciiz "Result of (2 *a - b) / (a + b) is: "
+
+##
+## end of	Calc.asm
+##  
+
+
+
+##
+##	Menu.asm
+##  
+	.text
+	la $t0, array
+	la $a0, msgSize
+	li $v0, 4
+	syscall
+	
+	li $v0, 5
+	syscall
+	
+	la $t1, ($v0)
+	li $t3, 0
+	
+ask:
+	la $a0, msgAsk
+	li $v0, 4
+	syscall
+	
+	li $v0, 5
+	syscall
+
+	sw $v0, ($t0)
+	addi $t0, $t0, 4
+	addi $t3, $t3, 1
+	blt $t3, $t1, ask
+	
+	la $a0, newLine
+	li $v0, 4
+	syscall
+	
+menu:
+	la $a0, menuA
+	li $v0, 4
+	syscall
+	la $a0, menuB
+	li $v0, 4
+	syscall
+	la $a0, menuC
+	li $v0, 4
+	syscall
+	la $a0, menuD
+	li $v0, 4
+	syscall
+	la $a0, msgMenu
+	li $v0, 4
+	syscall
+	li $v0, 12
+	syscall
+	la $t2, ($v0)
+	la $a0, newLine
+	li $v0, 4
+	syscall
+	
+	beq $t2, 97, A
+	beq $t2, 98, B
+	beq $t2, 99, C
+	beq $t2, 100, terminate
+	
+	j menu
+	
+#----------------------------------------------------
+terminate:
+	li $v0, 10
+	syscall
+	
+A:
+	li $t2, 0
+	li $t5, 0
+	la $t0, array
+	
+	la $a0, msgAsk
+	li $v0, 4
+	syscall
+	
+	li $v0, 5
+	syscall
+	la $t4, ($v0)
+loopA:
+	lw $t3, ($t0)
+	addi $t2, $t2, 1
+	addi $t0, $t0, 4
+	ble $t3, $t4, doneA
+	add $t5, $t5, $t3
+doneA:
+	blt $t2, $t1, loopA
+	la $a0, resultA
+	li $v0, 4
+	syscall
+	la $a0, ($t5)
+	li $v0, 1
+	syscall
+	la $a0, newLine
+	li $v0, 4
+	syscall
+	j menu
+	
+B:
+	li $t2, 0
+	li $t4, 0
+	li $t5, 0
+	li $t6, 0
+	la $t0, array
+loopB:
+	lw $t3, ($t0)
+	addi $t2, $t2, 1
+	addi $t0, $t0, 4
+	
+	rem $t4,$t3, 2
+	beqz $t4, evenB
+	add $t5, $t5, $t3
+	j doneB
+evenB:
+	add $t6, $t6, $t3
+doneB:
+	blt $t2, $t1, loopB
+	la $a0, resultB_odd
+	li $v0, 4
+	syscall
+	la $a0, ($t5)
+	li $v0, 1
+	syscall
+	la $a0, newLine
+	li $v0, 4
+	syscall
+	la $a0, resultB_even
+	li $v0, 4
+	syscall
+	la $a0, ($t6)
+	li $v0, 1
+	syscall
+	la $a0, newLine
+	li $v0, 4
+	syscall
+	j menu
+C:
+	la $t2, ($zero)
+	la $t0, array
+	la $t4, ($zero)
+	la $t5, ($zero)
+	la $t6, ($zero)
+	
+	la $a0, msgAsk
+	li $v0, 4
+	syscall
+	
+	li $v0, 5
+	syscall
+	la $t4, ($v0)
+loopC:
+	lw $t3, ($t0)
+	addi $t2, $t2, 1
+	addi $t0, $t0, 4
+	
+	rem $t5,$t3, $t4
+	bnez $t5, doneC
+	addi $t6, $t6, 1
+doneC:
+	blt $t2, $t1, loopC
+	la $a0, resultC
+	li $v0, 4
+	syscall
+	la $a0, ($t6)
+	li $v0, 1
+	syscall
+	la $a0, newLine
+	li $v0, 4
+	syscall
+	j menu
+	
+	
+#----------------------------------------------------
+
+	.data
+array: .space 400
+msgSize: .asciiz "Input array size: "
+msgAsk: .asciiz	"Input number: "
+msgMenu: .asciiz "Input menu choice: "
+msgExceed: .asciiz "Max array size is 100!"
+size: .word 0
+sizeMax: .word 100
+newLine: .asciiz "\n\n"
+menuA: .asciiz "a. Find summation of numbers stored in the array which is greater than an input number.\n"
+menuB: .asciiz "b. Find summation of even and odd numbers and display them.\n"
+menuC: .asciiz "c. Display the number of occurrences of the array elements divisible by a certain input number.\n"
+menuD: .asciiz "d. Quit.\n"
+resultA: .asciiz "Summation of the numbers in the array is: "
+resultB_even: .asciiz "Summation of the even numbers in the array is: "
+resultB_odd: .asciiz "Summation of the odd numbers in the array is: "
+resultC: .asciiz "Total occurence of the numbers in the array dividible by the input is: "
+
+##
+##	End.asm
+##  

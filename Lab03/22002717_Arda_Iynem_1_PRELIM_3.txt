@@ -1,0 +1,552 @@
+CS224
+Lab No.: 3
+Section No.: 1
+Your Full Name: Arda İynem
+Bilkent ID: 22002717
+Date: 31/10/2022
+
+##############################
+# mergeSortedLists.asm start #
+##############################
+
+#--------------------------------------------------- Text Segment ---------------------------------------------------
+.text
+main:
+	la $a0, msgSize
+	li $v0, 4
+	syscall
+	
+	li $v0, 5
+	syscall
+	move $t0, $v0 # t0 = size of dynamic array
+	
+	blt $t0, 1, emptyArray1
+	
+	move	$a0, $t0 #create a linked list with $t0 nodes
+	jal	createLinkedList
+	move $t1, $v0 # Head of List 1
+	
+	j notEmptyArray1
+	
+	emptyArray1:
+	add $t1, $zero, $zero
+	notEmptyArray1:
+
+	
+	# Linked list is pointed by $v0
+	move	$a0, $t1	# Pass the linked list address in $a0
+	jal 	printLinkedList
+	
+	la $a0, newLine
+	li $v0, 4
+	syscall
+	
+	
+	la $a0, msgSize
+	li $v0, 4
+	syscall
+	
+	li $v0, 5
+	syscall
+	move $t0, $v0 # t0 = size of dynamic array
+	
+	blt $t0, 1, emptyArray2
+	
+	move	$a0, $t0 #create a linked list with 10 nodes
+	jal	createLinkedList
+	move $t2, $v0 # Head of List 2
+	
+	j notEmptyArray2
+	
+	emptyArray2:
+	add $t2, $zero, $zero
+		
+	notEmptyArray2:
+	
+	move	$a0, $t2	# Pass the linked list address in $a0
+	jal 	printLinkedList
+	
+	la $a0, newLine
+	li $v0, 4
+	syscall
+	
+	move	$a0, $t1
+	move	$a1, $t2
+	jal mergeSortedLists
+	move $t3, $v0
+	move $t4, $v1
+	
+	la $a0, msgMerged
+	li $v0, 4
+	syscall
+	
+	bgt $t4, 0, notEmptyArray3
+	add $t3, $zero, $zero
+	
+	notEmptyArray3:
+	move	$a0, $t3	# Pass the linked list address in $a0
+	jal 	printLinkedList
+	
+	
+	# Stop. 
+	li	$v0, 10
+	syscall
+
+#--------------------------------------------------- Subprogram Segment ---------------------------------------------------
+
+#====================================================== START mergeSortedList
+# a0 = head of List 1
+# a1 = head of List 2
+mergeSortedLists:
+	addi	$sp, $sp, -32
+	sw	$s6, 28($sp)
+	sw	$s5, 24($sp)
+	sw	$s0, 20($sp)
+	sw	$s1, 16($sp)
+	sw	$s2, 12($sp)
+	sw	$s3, 8($sp)
+	sw	$s4, 4($sp)
+	sw	$ra, 0($sp)
+
+	move $s0, $a0 # head of L1
+	move $s1, $a1 # head of L2
+	
+mergeIterate:
+	beqz $s0, passL2
+	beqz $s1, passL1
+	
+	lw $s2, 4($s0)
+	lw $s3, 4($s1)
+	
+	beqz $s6, nullList
+	beq $s2, $s7, repeatedL1
+	beq $s3, $s7, repeatedL2
+nullList:
+	
+	bgt $s2, $s3, passL2
+	bgt $s3, $s2, passL1
+	
+	move $s7, $s2
+	lw $s0, ($s0)
+	lw $s1, ($s1)
+	
+	li	$a0, 8
+	li	$v0, 9
+	syscall
+	
+	bnez $s6, skip0
+	move $s5, $v0
+	j jumpFirst0
+skip0:
+	sw $v0, ($s4)
+jumpFirst0:
+	move $s4, $v0
+	sw $s2, 4($s4) # Copy element to the L3
+	addi $s6, $s6, 1
+	j passDone
+
+repeatedL1:
+	lw $s0, ($s0)
+	j mergeIterate
+repeatedL2:
+	lw $s1, ($s1)
+	j mergeIterate
+passL1:
+	beqz $s0, listAllDone # For last node case
+	lw $s2, 4($s0) # For last list case
+	beqz $s6, nullList1
+	bne $s2, $s7, nullList1
+	lw $s0, ($s0)
+	j passL1
+nullList1:
+	move $s7, $s2 # update last element in merged list
+	lw $s0, ($s0) # Iterate node
+
+	li	$a0, 8
+	li	$v0, 9
+	syscall
+	
+	bnez $s6, skip1
+	move $s5, $v0
+	j jumpFirst1
+skip1:
+	sw $v0, ($s4)
+jumpFirst1:
+	move $s4, $v0
+	sw $s2, 4($s4) # Copy element to the L3
+	addi $s6, $s6, 1
+	j passDone
+passL2:
+	beqz $s1, listAllDone # For last node case
+	lw $s3, 4($s1) # For last list case
+	beqz $s6, nullList2
+	bne $s3, $s7, nullList2
+	lw $s1, ($s1)
+	j passL2
+nullList2:
+	move $s7, $s3 # update last element in merged list
+	lw $s1, ($s1) # Iterate node
+	
+	li	$a0, 8
+	li	$v0, 9
+	syscall
+	
+	bnez $s6, skip2
+	move $s5, $v0
+	j jumpFirst2
+skip2:
+	sw $v0, ($s4)
+jumpFirst2:
+	move $s4, $v0
+	sw $s3, 4($s4) # Copy element to the L3
+	addi $s6, $s6, 1
+	j passDone
+	
+passDone:
+	beqz $s0, checkBoth # To check if both lists are exhausted
+	j mergeIterate
+checkBoth:
+	beqz $s1, listAllDone # To check if both lists are exhausted
+	j mergeIterate
+listAllDone:
+	move $v0, $s5
+	move $v1, $s6
+
+# Restore the register values
+	lw	$ra, 0($sp)
+	lw	$s4, 4($sp)
+	lw	$s3, 8($sp)
+	lw	$s2, 12($sp)
+	lw	$s1, 16($sp)
+	lw	$s0, 20($sp)
+	lw	$s5, 24($sp)
+	lw	$s6, 28($sp)
+	addi	$sp, $sp, 32
+	jr	$ra
+#====================================================== END mergeSortedList
+
+#====================================================== START createLinkedList
+createLinkedList:
+# $a0: No. of nodes to be created ($a0 >= 1)
+# $v0: returns list head
+# Node 1 contains 4 in the data field, node i contains the value 4*i in the data field.
+# By 4*i inserting a data value like this
+# when we print linked list we can differentiate the node content from the node sequence no (1, 2, ...).
+	addi	$sp, $sp, -24
+	sw	$s0, 20($sp)
+	sw	$s1, 16($sp)
+	sw	$s2, 12($sp)
+	sw	$s3, 8($sp)
+	sw	$s4, 4($sp)
+	sw	$ra, 0($sp) 	# Save $ra just in case we may want to call a subprogram
+	
+	move	$s0, $a0	# $s0: no. of nodes to be created.
+	li	$s1, 1		# $s1: Node counter
+# Create the first node: header.
+# Each node is 8 bytes: link field then data field.
+	li	$a0, 8
+	li	$v0, 9
+	syscall
+# OK now we have the list head. Save list head pointer 
+	move	$s2, $v0	# $s2 points to the first and last node of the linked list.
+	move	$s3, $v0	# $s3 now points to the list head.
+
+	la $a0, msgInput
+	li $v0, 4
+	syscall
+	
+	li $v0, 5
+	syscall
+	
+	sw $v0, 4($s2)	# Store the data value.
+	
+addNode:
+# Are we done?
+# No. of nodes created compared with the number of nodes to be created.
+	beq	$s1, $s0, allDone
+	addi	$s1, $s1, 1	# Increment node counter.
+	li	$a0, 8 		# Remember: Node size is 8 bytes.
+	li	$v0, 9
+	syscall
+# Connect the this node to the lst node pointed by $s2.
+	sw	$v0, 0($s2)
+# Now make $s2 pointing to the newly created node.
+	move	$s2, $v0	# $s2 now points to the new node.
+
+	la $a0, msgInput
+	li $v0, 4
+	syscall
+	
+	li $v0, 5
+	syscall
+	
+# sll: So that node 1 data value will be 4, node i data value will be 4*i
+	sw	$v0, 4($s2)	# Store the data value.
+	j	addNode
+allDone:
+# Make sure that the link field of the last node cotains 0.
+# The last node is pointed by $s2.
+	sw	$zero, 0($s2)
+	move	$v0, $s3	# Now $v0 points to the list head ($s3).
+	
+# Restore the register values
+	lw	$ra, 0($sp)
+	lw	$s4, 4($sp)
+	lw	$s3, 8($sp)
+	lw	$s2, 12($sp)
+	lw	$s1, 16($sp)
+	lw	$s0, 20($sp)
+	addi	$sp, $sp, 24
+	
+	jr	$ra
+#====================================================== END createLinkedList
+
+#====================================================== START printLinkedList
+printLinkedList:
+# Print linked list nodes in the following format
+# --------------------------------------
+# Node No: xxxx (dec)
+# Address of Current Node: xxxx (hex)
+# Address of Next Node: xxxx (hex)
+# Data Value of Current Node: xxx (dec)
+# --------------------------------------
+
+# Save $s registers used
+	addi	$sp, $sp, -20
+	sw	$s0, 16($sp)
+	sw	$s1, 12($sp)
+	sw	$s2, 8($sp)
+	sw	$s3, 4($sp)
+	sw	$ra, 0($sp) 	# Save $ra just in case we may want to call a subprogram
+
+# $a0: points to the linked list.
+# $s0: Address of current
+# s1: Address of next
+# $2: Data of current
+# $s3: Node counter: 1, 2, ...
+	move $s0, $a0	# $s0: points to the current node.
+	li   $s3, 0
+printNextNode:
+	beq	$s0, $zero, printedAll
+				# $s0: Address of current node
+	lw	$s1, 0($s0)	# $s1: Address of  next node
+	lw	$s2, 4($s0)	# $s2: Data of current node
+	addi	$s3, $s3, 1
+# $s0: address of current node: print in hex.
+# $s1: address of next node: print in hex.
+# $s2: data field value of current node: print in decimal.
+
+	move	$a0, $s2	# $s2: Data of current node
+	li	$v0, 1		
+	syscall	
+	
+	la $a0, inSpace
+	li $v0, 4
+	syscall
+
+# Now consider next node.
+	move	$s0, $s1	# Consider next node.
+	j	printNextNode
+printedAll:
+# Restore the register values
+	bnez $s3, notNull
+	
+	la $a0, msgEmpty
+	li $v0, 4
+	syscall
+	
+notNull:
+	la $a0, msgNodeNum
+	li $v0, 4
+	syscall
+	
+	move	$a0, $s3	# $s3: Node number (position) of current node
+	li	$v0, 1
+	syscall
+	
+	la $a0, newLine
+	li $v0, 4
+	syscall
+	
+	lw	$ra, 0($sp)
+	lw	$s3, 4($sp)
+	lw	$s2, 8($sp)
+	lw	$s1, 12($sp)
+	lw	$s0, 16($sp)
+	addi	$sp, $sp, 20
+	jr	$ra
+#====================================================== END printLinkedList
+	
+#--------------------------------------------------- Data Segment ---------------------------------------------------
+	.data
+line:	
+	.asciiz "\n --------------------------------------"
+
+nodeNumberLabel:
+	.asciiz	"\n Node No.: "
+	
+addressOfCurrentNodeLabel:
+	.asciiz	"\n Address of Current Node: "
+	
+addressOfNextNodeLabel:
+	.asciiz	"\n Address of Next Node: "
+	
+dataValueOfCurrentNode:
+	.asciiz	"\n Data Value of Current Node: "
+	
+msgSize: .asciiz "Input the size of dynamic array: " 
+msgInput: .asciiz "Input an integer: " 
+msgEmpty: .asciiz "NULL ARRAY!\n" 
+msgMerged: .asciiz "\nMerged List:\n" 
+msgArray: .asciiz "Array: " 
+msgNodeNum: .asciiz "\nNumber of nodes is: " 
+newLine: .asciiz "\n"
+inSpace: .asciiz ", "
+
+
+############################
+# mergeSortedLists.asm end #
+############################
+
+
+
+
+
+
+#############################
+# registerCounter.asm start #
+#############################
+
+#--------------------------------------------------- Text Segment ---------------------------------------------------
+.text
+main:
+	la $a0, msgInput
+	li $v0, 4
+	syscall
+	
+	li $v0, 5
+	syscall
+	
+	move $t0, $v0
+	
+	bgtz $t0, checkBoundry
+	j terminate
+checkBoundry:
+	bgt $t0, 31, terminate
+	
+	move $a0, $v0
+	jal registerCounter
+	
+	move $a0, $v0
+	li $v0, 1
+	syscall
+	
+	la $a0, newLine
+	li $v0, 4
+	syscall
+	
+	j main
+	
+terminate:
+	li $v0, 10
+	syscall
+	
+#--------------------------------------------------- Subprogram Segment ---------------------------------------------------
+
+#====================================================== START registerCounter
+registerCounter:
+addi	$sp, $sp, -24
+sw	$s0, 20($sp)
+sw	$s1, 16($sp)
+sw	$s2, 12($sp)
+sw	$s3, 8($sp)
+sw	$s4, 4($sp)
+sw	$ra, 0($sp) 	# Save $ra just in case we may want to call a subprogram
+
+# Stack operations aren't included in subprogram register count by choice, start label is the starting point
+start:
+la $s0, start
+la $s1, end
+
+# ---- LoopStart ----
+loop:
+bge $s0, $s1, end
+lw $s2, ($s0)
+
+srl $s3, $s2, 26 # Get first 5 bits for opcode
+
+# Determine Instruction Type - START
+beq $s3, $zero, typeR
+beq $s3, 2, skipInstruction #typeJ instruction j
+beq $s3, 3, skipInstruction #typeJ instruction jal
+beq $s2, 12, skipInstruction #syscall
+j typeI
+# Determine Instruction Type - END
+
+# Type R, register check - START
+typeR:
+sll $s3, $s2, 6
+srl $s3, $s3, 27
+
+bne  $s3, $a0, skip1_typeR
+addi $s4, $s4, 1
+
+skip1_typeR:
+sll $s3, $s2, 11
+srl $s3, $s3, 27
+bne $s3, $a0, skip2_typeR
+addi $s4, $s4, 1
+
+skip2_typeR:
+sll $s3, $s2, 16
+srl $s3, $s3, 27
+bne $s3, $a0, skipInstruction
+addi $s4, $s4, 1
+j skipInstruction
+# Type R, register check - END
+
+# Type I, register check - START
+typeI:
+sll $s3, $s2, 6
+srl $s3, $s3, 27
+
+bne  $s3, $a0, skip1_typeI
+addi $s4, $s4, 1
+
+skip1_typeI:
+sll $s3, $s2, 11
+srl $s3, $s3, 27
+bne $s3, $a0, skipInstruction
+addi $s4, $s4, 1
+# Type I, register check - END
+
+skipInstruction:
+
+addi $s0, $s0, 4
+j loop
+# ---- LoopEnd ----
+
+# Stack operations aren't included in subprogram register count by choice, end label is the ending point
+end:
+add $v0, $s4, $zero
+lw	$ra, 0($sp)
+lw	$s4, 4($sp)
+lw	$s3, 8($sp)
+lw	$s2, 12($sp)
+lw	$s1, 16($sp)
+lw	$s0, 20($sp)
+addi	$sp, $sp, 24
+	
+jr	$ra
+#====================================================== END registerCounter
+
+#--------------------------------------------------- Data Segment ---------------------------------------------------
+.data
+msgInput: .asciiz "Input a register number (1-31): "
+newLine: .asciiz "\n"
+
+###########################
+# registerCounter.asm end #
+###########################
+
+	
